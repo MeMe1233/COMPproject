@@ -11,9 +11,9 @@ public class Mysqlmethods {
 
 	// ------------------- CONNECTION -------------------
 	public Mysqlmethods() {
-		String url = "jdbc:mysql://localhost:3306/cloth_market"; // your DB name
-		String user = "root"; // your MySQL username
-		String password = ""; // your MySQL password
+		String url = "jdbc:mysql://localhost:3306/cloth_market"; // DB name
+		String user = "root"; // MySQL username
+		String password = "000"; // MySQL password
 		try {
 			conn = DriverManager.getConnection(url, user, password);
 			System.out.println("Database connected!");
