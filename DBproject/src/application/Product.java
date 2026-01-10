@@ -6,17 +6,19 @@ public class Product {
 	private String size;
 	private String color;
 	private double price;
+	private Supplier supplier;
 
 	public Product() {
 	}
 
-	public Product(int id, String name, String size, String color, double price) {
-		this.id = id;
-		this.name = name;
-		this.size = size;
-		this.color = color;
-		this.price = price;
-	}
+	public Product(int id, String name, String size, String color, double price, Supplier supplier) {
+        this.id = id;
+        this.name = name;
+        this.size = size;
+        this.color = color;
+        this.price = price;
+        this.supplier = supplier; // NEW
+    }
 
 	public int getId() {
 		return id;
@@ -57,5 +59,14 @@ public class Product {
 	public void setPrice(double price) {
 		this.price = price;
 	}
+
+	public Supplier getSupplier() {
+		return supplier;
+	}
+
+	public void setSupplier(Supplier supplier) {
+		this.supplier = supplier;
+	}
+	
 
 }
