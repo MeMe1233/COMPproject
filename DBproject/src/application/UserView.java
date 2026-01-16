@@ -69,8 +69,8 @@ public class UserView {
 		bEmployees.setOnAction(e -> showPage(buildEmployeesPage()));
 		bOrders.setOnAction(e -> showPage(buildOrdersPage()));
 		bCustomers.setOnAction(e -> showPage(buildCustomersPage()));
-		bSupplier.setOnAction(e -> showPage(buildPlaceholder("Supplier")));
-		bStock.setOnAction(e -> showPage(buildPlaceholder("Stock")));
+		bSupplier.setOnAction(e -> showPage(buildSupplierPage()));
+		bStock.setOnAction(e -> showPage(buildStockPage()));
 
 		// Products page is real (TableView + DB load)
 		bProducts.setOnAction(e -> showPage(buildProductsPage()));
@@ -393,5 +393,263 @@ public class UserView {
 
 		return box;
 	}
+	private Parent buildSupplierPage() {
+
+	    Label title = new Label("Suppliers");
+
+	    TableView<Supplier> table = new TableView<>();
+
+	    TableColumn<Supplier, Integer> colId = new TableColumn<>("ID");
+	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+	    TableColumn<Supplier, String> colName = new TableColumn<>("Name");
+	    colName.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+	    TableColumn<Supplier, String> colPhone = new TableColumn<>("Phone");
+	    colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+
+	    TableColumn<Supplier, String> colEmail = new TableColumn<>("Email");
+	    colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+
+	    TableColumn<Supplier, String> colCompany = new TableColumn<>("Company");
+	    colCompany.setCellValueFactory(new PropertyValueFactory<>("companyName"));
+
+	    table.getColumns().addAll(colId, colName, colPhone, colEmail, colCompany);
+	    table.getSortOrder().add(colId);
+
+	    // Search
+	    TextField searchField = new TextField();
+	    searchField.setPromptText("Search by ID / Name / Company");
+	    Button searchBtn = new Button("Search");
+	    Button resetBtn = new Button("Reset");
+
+	    // Form
+	    TextField name = new TextField(); name.setPromptText("Name");
+	    TextField phone = new TextField(); phone.setPromptText("Phone");
+	    TextField email = new TextField(); email.setPromptText("Email");
+	    TextField company = new TextField(); company.setPromptText("Company Name");
+
+	    Button addBtn = new Button("Add");
+	    Button updateBtn = new Button("Update");
+	    Button deleteBtn = new Button("Delete");
+
+	    Runnable load = () -> table.setItems(FXCollections.observableArrayList(db.getAllSuppliers()));
+
+	    addBtn.setOnAction(e -> {
+	        Supplier s = new Supplier(0, name.getText(), phone.getText(), email.getText(), company.getText());
+	        db.addSupplier(s);
+	        load.run();
+	    });
+
+	    updateBtn.setOnAction(e -> {
+	        Supplier s = table.getSelectionModel().getSelectedItem();
+	        if (s != null) {
+	            s.setName(name.getText());
+	            s.setPhone(phone.getText());
+	            s.setEmail(email.getText());
+	            s.setCompanyName(company.getText());
+	            db.updateSupplier(s);
+	            load.run();
+	        }
+	    });
+
+	    deleteBtn.setOnAction(e -> {
+	        Supplier s = table.getSelectionModel().getSelectedItem();
+	        if (s != null) {
+	            db.deleteSupplier(s.getId());
+	            load.run();
+	        }
+	    });
+
+	    searchBtn.setOnAction(e -> {
+	        String k = searchField.getText().trim();
+	        if (!k.isEmpty()) {
+	            table.setItems(FXCollections.observableArrayList(db.searchSuppliers(k)));
+	        }
+	    });
+
+	    resetBtn.setOnAction(e -> load.run());
+
+	    table.getSelectionModel().selectedItemProperty().addListener((obs, old, s) -> {
+	        if (s != null) {
+	            name.setText(s.getName());
+	            phone.setText(s.getPhone());
+	            email.setText(s.getEmail());
+	            company.setText(s.getCompanyName());
+	        }
+	    });
+
+	    load.run();
+
+	    VBox searchBox = new VBox(5, searchField, new HBox(5, searchBtn, resetBtn));
+	    VBox formBox = new VBox(5, name, phone, email, company, new HBox(5, addBtn, updateBtn, deleteBtn));
+	    VBox box = new VBox(10, title, searchBox, table, formBox);
+	    box.setPadding(new Insets(10));
+	    return box;
+	}
+	private Parent buildStockPage() {
+
+	    Label title = new Label("Stock");
+
+	    TableView<Stock> table = new TableView<>();
+
+	    TableColumn<Stock, Integer> colId = new TableColumn<>("Stock ID");
+	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+	    TableColumn<Stock, Integer> colProdId = new TableColumn<>("Product ID");
+	    colProdId.setCellValueFactory(cell ->
+	        new SimpleObjectProperty<>(cell.getValue().getProduct() != null ? cell.getValue().getProduct().getId() : 0)
+	    );
+
+	    TableColumn<Stock, String> colProdName = new TableColumn<>("Product");
+	    colProdName.setCellValueFactory(cell ->
+	        new SimpleObjectProperty<>(cell.getValue().getProduct() != null ? cell.getValue().getProduct().getName() : "")
+	    );
+
+	    TableColumn<Stock, Integer> colQty = new TableColumn<>("Quantity");
+	    colQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+
+	    table.getColumns().addAll(colId, colProdId, colProdName, colQty);
+	    table.getSortOrder().add(colId);
+
+	    // =========================
+	    // Search
+	    // =========================
+	    TextField searchField = new TextField();
+	    searchField.setPromptText("Search by Stock ID / Product ID / Product Name");
+
+	    Button searchBtn = new Button("Search");
+	    Button resetBtn = new Button("Reset");
+
+	    // =========================
+	    // Form: choose product + quantity
+	    // =========================
+	    ComboBox<Product> productCombo = new ComboBox<>();
+	    productCombo.setPromptText("Select Product");
+
+	    // Safety: if db connection failed, avoid crash
+	    if (db != null) {
+	        productCombo.setItems(FXCollections.observableArrayList(db.getAllProducts()));
+	    } else {
+	        productCombo.setItems(FXCollections.observableArrayList());
+	    }
+
+	    productCombo.setCellFactory(lv -> new ListCell<>() {
+	        @Override
+	        protected void updateItem(Product item, boolean empty) {
+	            super.updateItem(item, empty);
+	            setText(empty || item == null ? null : (item.getId() + " - " + item.getName()));
+	        }
+	    });
+	    productCombo.setButtonCell(new ListCell<>() {
+	        @Override
+	        protected void updateItem(Product item, boolean empty) {
+	            super.updateItem(item, empty);
+	            setText(empty || item == null ? null : (item.getId() + " - " + item.getName()));
+	        }
+	    });
+
+	    TextField qtyField = new TextField();
+	    qtyField.setPromptText("Quantity");
+
+	    Button addBtn = new Button("Add (+)");
+	    Button updateBtn = new Button("Update Qty");
+	    Button deleteBtn = new Button("Delete Row");
+
+	    // =========================
+	    // LOAD 
+	    // =========================
+	    Runnable load = () -> {
+	        if (db == null) {
+	            table.setItems(FXCollections.observableArrayList());
+	            return;
+	        }
+	        table.setItems(FXCollections.observableArrayList(db.getAllStock()));
+	    };
+
+	    // Small helper: clear inputs after actions (optional but useful)
+	    Runnable clearForm = () -> {
+	        qtyField.clear();
+	        productCombo.getSelectionModel().clearSelection();
+	        table.getSelectionModel().clearSelection();
+	    };
+
+	    // =========================
+	    // Actions
+	    // =========================
+
+	    addBtn.setOnAction(e -> {
+	        try {
+	            if (db == null) return;
+
+	            Product p = productCombo.getValue();
+	            int q = Integer.parseInt(qtyField.getText().trim());
+
+	            if (p != null && q > 0) {
+	                db.addStock(p.getId(), q);
+	                load.run();
+	                clearForm.run();
+	            }
+	        } catch (Exception ignored) {}
+	    });
+
+	    updateBtn.setOnAction(e -> {
+	        try {
+	            if (db == null) return;
+
+	            Stock st = table.getSelectionModel().getSelectedItem();
+	            if (st != null) {
+	                int newQ = Integer.parseInt(qtyField.getText().trim());
+	                db.updateStockQuantity(st.getId(), newQ);
+	                load.run();
+	                clearForm.run();
+	            }
+	        } catch (Exception ignored) {}
+	    });
+
+	    deleteBtn.setOnAction(e -> {
+	        if (db == null) return;
+
+	        Stock st = table.getSelectionModel().getSelectedItem();
+	        if (st != null) {
+	            db.deleteStock(st.getId());
+	            load.run();
+	            clearForm.run();
+	        }
+	    });
+
+	    searchBtn.setOnAction(e -> {
+	        if (db == null) return;
+
+	        String k = searchField.getText().trim();
+	        if (!k.isEmpty()) {
+	            table.setItems(FXCollections.observableArrayList(db.searchStock(k)));
+	        }
+	    });
+
+	    resetBtn.setOnAction(e -> {
+	        searchField.clear(); 
+	        load.run();
+	    });
+
+	    table.getSelectionModel().selectedItemProperty().addListener((obs, old, st) -> {
+	        if (st != null) {
+	            qtyField.setText(String.valueOf(st.getQuantity()));
+	            // NOTE: productCombo select may fail if object references differ
+	        }
+	    });
+
+	    load.run();
+
+	    VBox searchBox = new VBox(5, searchField, new HBox(5, searchBtn, resetBtn));
+	    VBox formBox = new VBox(5, productCombo, qtyField, new HBox(5, addBtn, updateBtn, deleteBtn));
+
+	    VBox box = new VBox(10, title, searchBox, table, formBox);
+	    box.setPadding(new Insets(10));
+	    return box;
+	}
+
+
+
 
 }

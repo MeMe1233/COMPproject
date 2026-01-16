@@ -35,6 +35,7 @@ public class StartView {
             stage.setScene(new Scene(view.getRoot(), 900, 600));
         });
 
+
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(30));
         root.getChildren().addAll(title, btnUser, btnCustomer);
