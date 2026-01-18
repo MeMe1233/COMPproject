@@ -30,7 +30,12 @@ public class UserView {
 		// ===== Top Bar =====
 		Label title = new Label("User");
 		Button back = new Button("Back");
-		back.setOnAction(e -> stage.setScene(new Scene(new StartView(stage).getRoot(), 900, 600)));
+		back.setOnAction(e -> {
+		    Scene sc = new Scene(new StartView(stage).getRoot(), 900, 600);
+		    sc.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+		    stage.setScene(sc);
+		});
+
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -43,13 +48,15 @@ public class UserView {
 		VBox side = new VBox(8);
 		side.setPadding(new Insets(10));
 		side.setPrefWidth(180);
+		side.getStyleClass().add("sidebar");
 
-		Button bEmployees = new Button("Employees");
-		Button bOrders = new Button("Orders");
-		Button bCustomers = new Button("Customers");
-		Button bProducts = new Button("Products");
-		Button bSupplier = new Button("Supplier");
-		Button bStock = new Button("Stock");
+		Button bEmployees = new Button("👷 Employees");
+		Button bOrders    = new Button("🧾 Orders");
+		Button bCustomers = new Button("🧑‍🤝‍🧑 Customers");
+		Button bProducts  = new Button("👕 Products");
+		Button bSupplier  = new Button("🏭 Supplier");
+		Button bStock     = new Button("📦 Stock");
+
 
 		for (Button b : new Button[] { bEmployees, bOrders, bCustomers, bProducts, bSupplier, bStock }) {
 			b.setMaxWidth(Double.MAX_VALUE);
@@ -62,8 +69,7 @@ public class UserView {
 		contentPane.setPadding(new Insets(10));
 		root.setCenter(contentPane);
 
-		// Default page
-		showPage(buildWelcomePage());
+		showPage(buildUserLoginPage(stage));
 
 		// Pages
 		bEmployees.setOnAction(e -> showPage(buildEmployeesPage()));
@@ -103,6 +109,7 @@ public class UserView {
 		Label title = new Label("Products");
 
 		TableView<Product> table = new TableView<>();
+		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 		TableColumn<Product, Integer> colId = new TableColumn<>("ID");
 		colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -210,6 +217,7 @@ public class UserView {
 
 		// ===== Table =====
 		TableView<Employee> table = new TableView<>();
+		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 		TableColumn<Employee, Integer> colId = new TableColumn<>("ID");
 		colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -318,6 +326,7 @@ public class UserView {
 		Label title = new Label("Orders");
 
 		TableView<OrderSummary> table = new TableView<>();
+		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 		TableColumn<OrderSummary, Integer> colId = new TableColumn<>("Order ID");
 		colId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
@@ -356,10 +365,12 @@ public class UserView {
 	}
 
 	private Parent buildCustomersPage() {
+		
 
 		Label title = new Label("Customers");
 
 		TableView<Customer> table = new TableView<>();
+		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 		TableColumn<Customer, Integer> colId = new TableColumn<>("ID");
 		colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -396,9 +407,10 @@ public class UserView {
 	private Parent buildSupplierPage() {
 
 	    Label title = new Label("Suppliers");
+	   
 
 	    TableView<Supplier> table = new TableView<>();
-
+	    table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 	    TableColumn<Supplier, Integer> colId = new TableColumn<>("ID");
 	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
 
@@ -492,6 +504,7 @@ public class UserView {
 	    Label title = new Label("Stock");
 
 	    TableView<Stock> table = new TableView<>();
+	    table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 	    TableColumn<Stock, Integer> colId = new TableColumn<>("Stock ID");
 	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -512,22 +525,19 @@ public class UserView {
 	    table.getColumns().addAll(colId, colProdId, colProdName, colQty);
 	    table.getSortOrder().add(colId);
 
-	    // =========================
 	    // Search
-	    // =========================
 	    TextField searchField = new TextField();
 	    searchField.setPromptText("Search by Stock ID / Product ID / Product Name");
 
 	    Button searchBtn = new Button("Search");
 	    Button resetBtn = new Button("Reset");
 
-	    // =========================
-	    // Form: choose product + quantity
-	    // =========================
+	    // choose product + quantity
+
 	    ComboBox<Product> productCombo = new ComboBox<>();
 	    productCombo.setPromptText("Select Product");
 
-	    // Safety: if db connection failed, avoid crash
+	    //  if db connection failed, avoid crash
 	    if (db != null) {
 	        productCombo.setItems(FXCollections.observableArrayList(db.getAllProducts()));
 	    } else {
@@ -556,9 +566,7 @@ public class UserView {
 	    Button updateBtn = new Button("Update Qty");
 	    Button deleteBtn = new Button("Delete Row");
 
-	    // =========================
 	    // LOAD 
-	    // =========================
 	    Runnable load = () -> {
 	        if (db == null) {
 	            table.setItems(FXCollections.observableArrayList());
@@ -567,16 +575,15 @@ public class UserView {
 	        table.setItems(FXCollections.observableArrayList(db.getAllStock()));
 	    };
 
-	    // Small helper: clear inputs after actions (optional but useful)
+	    // clear inputs after actions (optional but useful)
 	    Runnable clearForm = () -> {
 	        qtyField.clear();
 	        productCombo.getSelectionModel().clearSelection();
 	        table.getSelectionModel().clearSelection();
 	    };
 
-	    // =========================
+
 	    // Actions
-	    // =========================
 
 	    addBtn.setOnAction(e -> {
 	        try {
@@ -635,7 +642,6 @@ public class UserView {
 	    table.getSelectionModel().selectedItemProperty().addListener((obs, old, st) -> {
 	        if (st != null) {
 	            qtyField.setText(String.valueOf(st.getQuantity()));
-	            // NOTE: productCombo select may fail if object references differ
 	        }
 	    });
 
@@ -648,6 +654,67 @@ public class UserView {
 	    box.setPadding(new Insets(10));
 	    return box;
 	}
+	private Parent buildUserLoginPage(Stage stage) {
+
+	    Label t = new Label("🔐 Admin Login");
+	    t.getStyleClass().add("h1");
+
+	    Label sub = new Label("Please enter your username and password");
+	    sub.getStyleClass().add("sub");
+
+	    TextField user = new TextField();
+	    user.setPromptText("👤 Username");
+
+	    PasswordField pass = new PasswordField();
+	    pass.setPromptText("🔑 Password");
+
+	    Label msg = new Label();
+	    msg.getStyleClass().add("sub");
+
+	    Button login = new Button("✅ Login");
+	    login.getStyleClass().add("btn-primary");
+
+	    Button backBtn = new Button("⬅ Back");
+	    backBtn.getStyleClass().add("btn-secondary");
+
+	    login.setOnAction(e -> {
+	        try {
+	            String u = user.getText().trim();
+	            String p = pass.getText().trim();
+
+	            if (u.isEmpty() || p.isEmpty()) {
+	                msg.setText("⚠ Please fill username & password");
+	                return;
+	            }
+
+	            boolean ok = db != null && db.loginAdmin(u, p);
+	            if (!ok) {
+	                msg.setText("❌ Wrong username or password");
+	                return;
+	            }
+
+	            // success -> show dashboard welcome page
+	            showPage(buildWelcomePage());
+	        } catch (Exception ex) {
+	            msg.setText("❌ Login failed");
+	        }
+	    });
+	    backBtn.setOnAction(e -> {
+	        Scene sc = new Scene(new StartView(stage).getRoot(), 900, 600);
+	        sc.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+	        stage.setScene(sc);
+	    });
+
+	    VBox form = new VBox(10, t, sub, user, pass, new HBox(10, login, backBtn), msg);
+	    form.getStyleClass().add("card");
+	    form.setMaxWidth(460);
+	    form.setPadding(new Insets(20));
+
+	    StackPane wrap = new StackPane(form);
+	    wrap.setPadding(new Insets(20));
+	    return wrap;
+	}
+
 
 
 

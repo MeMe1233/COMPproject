@@ -922,7 +922,7 @@ public class Mysqlmethods {
     public int getOrCreateCartOrderId(int customerId) {
         ensureConnection();
 
-        // 1️⃣ Always create a new order for this cart
+        // Always create a new order for this cart
         String create = "INSERT INTO order_table(customer_id, order_date) VALUES (?, ?)";
         try (PreparedStatement s2 = conn.prepareStatement(create, Statement.RETURN_GENERATED_KEYS)) {
             s2.setInt(1, customerId);
@@ -1115,11 +1115,11 @@ public class Mysqlmethods {
 
         ensureConnection();
 
-        // 1️⃣ Create a new order
+        // Create a new order
         int orderId = createOrder(customerId);
         if (orderId == -1) return false;
 
-        // 2️⃣ Insert items
+        // Insert items
         for (Map.Entry<Product, Integer> entry : cart.entrySet()) {
             Product p = entry.getKey();
             int qty = entry.getValue();
@@ -1129,7 +1129,7 @@ public class Mysqlmethods {
                 return false;
             }
 
-            // 3️⃣ Reduce stock in DB
+            // Reduce stock in DB
             Stock stockItem = null;
             for (Stock s : getAllStock()) {
                 if (s.getProduct().getId() == p.getId()) {
@@ -1148,6 +1148,18 @@ public class Mysqlmethods {
 
         return true;
     }
+    public boolean loginAdmin(String username, String password) {
+        ensureConnection();
 
-
+        String sql = "SELECT id FROM person WHERE type='admin' AND username=? AND pass=? LIMIT 1";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

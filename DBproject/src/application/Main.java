@@ -11,8 +11,7 @@ public class Main extends Application {
         StartView startView = new StartView(stage);
         Scene scene = new Scene(startView.getRoot(), 900, 600);
 
-        // If you have css keep it, if not comment it
-        // scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+         scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 
         stage.setTitle("Cloth Market System");
         stage.setScene(scene);

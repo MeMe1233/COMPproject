@@ -1,11 +1,6 @@
 package application;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,370 +13,364 @@ import javafx.stage.Stage;
 
 public class CustomerView {
 
-	private final BorderPane root = new BorderPane();
-	private final StackPane content = new StackPane();
-	private Map<Product, Integer> cart = new HashMap<>();
+    private final BorderPane root = new BorderPane();
+    private final StackPane content = new StackPane();
 
-	private Mysqlmethods db;
-	private Customer loggedCustomer = null;
+    private Mysqlmethods db;
+    private Customer loggedCustomer = null;
 
-	public CustomerView(Stage stage) {
+    public CustomerView(Stage stage) {
 
-		try {
-			db = new Mysqlmethods();
-		} catch (Exception ignored) {
-		}
+        try { db = new Mysqlmethods(); } catch (Exception ignored) {}
 
-		// Top bar
-		Label title = new Label("Customer Interface");
-		Button back = new Button("Back");
-		back.setOnAction(e -> stage.setScene(new Scene(new StartView(stage).getRoot(), 900, 600)));
+        // ===== Top bar (fancy) =====
+        Label title = new Label("🛒 Customer Interface");
+        title.getStyleClass().add("top-title");
 
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button back = new Button("⬅ Back");
+        back.getStyleClass().add("top-btn");
+        back.setOnAction(e -> {
+            Scene sc = new Scene(new StartView(stage).getRoot(), 900, 600);
+            sc.getStylesheets().add(
+                getClass().getResource("application.css").toExternalForm()
+            );
+            stage.setScene(sc);
+        });
 
-		HBox top = new HBox(10, title, spacer, back);
-		top.setPadding(new Insets(10));
-		root.setTop(top);
 
-		// Center
-		content.setPadding(new Insets(10));
-		root.setCenter(content);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		// First page: login/register like the sketch
-		showPage(buildCustomerStartPage(stage));
-	}
+        HBox top = new HBox(10, title, spacer, back);
+        top.getStyleClass().add("top-bar");
+        top.setPadding(new Insets(10));
+        root.setTop(top);
 
-	public Parent getRoot() {
-		return root;
-	}
+        // Center
+        content.setPadding(new Insets(10));
+        root.setCenter(content);
 
-	private void showPage(Parent p) {
-		content.getChildren().setAll(p);
-	}
+        // First page
+        showPage(buildCustomerStartPage(stage));
+    }
 
-	// ------------------- PAGE 1: Login/Register Buttons -------------------
-	private Parent buildCustomerStartPage(Stage stage) {
+    public Parent getRoot() {
+        return root;
+    }
 
-		Label t = new Label("Customer Interface");
+    private void showPage(Parent p) {
+        content.getChildren().setAll(p);
+    }
 
-		Button loginBtn = new Button("Login");
-		Button registerBtn = new Button("Register");
+    // ------------------- PAGE 1: Login/Register Buttons -------------------
+    private Parent buildCustomerStartPage(Stage stage) {
 
-		loginBtn.setPrefWidth(240);
-		registerBtn.setPrefWidth(240);
+        Label t = new Label("🧑‍🤝‍🧑 Customer Portal");
+        t.getStyleClass().add("h1");
 
-		loginBtn.setOnAction(e -> showPage(buildLoginPage()));
-		registerBtn.setOnAction(e -> showPage(buildRegisterPage()));
+        Label sub = new Label("✨ Login or create a new account");
+        sub.getStyleClass().add("sub");
 
-		VBox box = new VBox(12, t, loginBtn, registerBtn);
-		box.setAlignment(Pos.CENTER);
-		box.setPadding(new Insets(25));
-		return box;
-	}
+        Button loginBtn = new Button("🔐 Login");
+        Button registerBtn = new Button("📝 Register");
 
-	// ------------------- PAGE 2: Login (Name + ID) -------------------
-	private Parent buildLoginPage() {
+        loginBtn.setPrefWidth(280);
+        registerBtn.setPrefWidth(280);
 
-		Label t = new Label("Login");
+        loginBtn.getStyleClass().add("btn-primary");
+        registerBtn.getStyleClass().add("btn-secondary");
 
-		TextField name = new TextField();
-		name.setPromptText("Customer Name");
+        loginBtn.setOnAction(e -> showPage(buildLoginPage(stage)));
+        registerBtn.setOnAction(e -> showPage(buildRegisterPage(stage)));
 
-		TextField id = new TextField();
-		id.setPromptText("Customer ID");
+        VBox box = new VBox(12, t, sub, loginBtn, registerBtn);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(25));
+        box.setMaxWidth(520);
+        box.getStyleClass().add("card");
 
-		Label msg = new Label();
+        StackPane wrap = new StackPane(box);
+        wrap.setPadding(new Insets(20));
+        return wrap;
+    }
 
-		Button enter = new Button("Enter");
-		Button back = new Button("Back");
+    // ------------------- PAGE 2: Login (Name + ID) -------------------
+    private Parent buildLoginPage(Stage stage) {
 
-		enter.setOnAction(e -> {
-			try {
-				int cid = Integer.parseInt(id.getText().trim());
-				String cname = name.getText().trim();
+        Label t = new Label("🔐 Login");
+        t.getStyleClass().add("h1");
 
-				Customer c = db.loginCustomerByIdAndName(cid, cname);
-				if (c == null) {
-					msg.setText("Wrong name or ID!");
-					return;
-				}
+        Label sub = new Label("Enter your name and ID to continue");
+        sub.getStyleClass().add("sub");
 
-				loggedCustomer = c;
-				showPage(buildCustomerHome()); // go to Products page
-			} catch (Exception ex) {
-				msg.setText("Enter valid ID + Name");
-			}
-		});
+        TextField name = new TextField();
+        name.setPromptText("👤 Customer Name");
 
-		back.setOnAction(e -> showPage(buildCustomerStartPage(null)));
+        TextField id = new TextField();
+        id.setPromptText("🆔 Customer ID");
 
-		VBox box = new VBox(10, t, name, id, new HBox(10, enter, back), msg);
-		box.setPadding(new Insets(20));
-		return box;
-	}
-
-	// ------------------- PAGE 3: Register Customer -------------------
-	private Parent buildRegisterPage() {
-
-		Label t = new Label("Register");
-
-		TextField name = new TextField();
-		name.setPromptText("Name");
-		TextField phone = new TextField();
-		phone.setPromptText("Phone");
-		TextField email = new TextField();
-		email.setPromptText("Email");
-		TextField address = new TextField();
-		address.setPromptText("Address");
-
-		Label msg = new Label();
-
-		Button create = new Button("Create");
-		Button back = new Button("Back");
-
-		create.setOnAction(e -> {
-			try {
-				Customer c = new Customer(0, name.getText(), phone.getText(), email.getText(), address.getText());
-				boolean ok = db.addCustomer(c);
-				msg.setText(ok ? "Created! Now Login." : "Failed!");
-			} catch (Exception ex) {
-				msg.setText("Failed!");
-			}
-		});
-
-		back.setOnAction(e -> showPage(buildCustomerStartPage(null)));
-
-		VBox box = new VBox(10, t, name, phone, email, address, new HBox(10, create, back), msg);
-		box.setPadding(new Insets(20));
-		return box;
-	}
-
-	// ------------------- CUSTOMER HOME (Products + Cart button)
-	// -------------------
-	private Parent buildCustomerHome() {
-
-		// Left menu like sketch: Products + Cart
-		Button bProducts = new Button("Products");
-		Button bCart = new Button("Cart");
-		Button bLogout = new Button("Logout");
-
-		for (Button b : new Button[] { bProducts, bCart, bLogout }) {
-			b.setMaxWidth(Double.MAX_VALUE);
-		}
-
-		VBox side = new VBox(10, bProducts, bCart, bLogout);
-		side.setPadding(new Insets(10));
-		side.setPrefWidth(160);
-
-		StackPane center = new StackPane();
-		center.setPadding(new Insets(10));
-
-		BorderPane pane = new BorderPane();
-		pane.setLeft(side);
-		pane.setCenter(center);
-
-		// default: products
-		center.getChildren().setAll(buildProductsPage());
-
-		bProducts.setOnAction(e -> center.getChildren().setAll(buildProductsPage()));
-		bCart.setOnAction(e -> center.getChildren().setAll(buildCartPage()));
-		bLogout.setOnAction(e -> {
-			loggedCustomer = null;
-			showPage(buildCustomerStartPage(null));
-		});
-
-		return pane;
-	}
-
-	// ------------------- PRODUCTS PAGE (Add to cart) -------------------
-	private Parent buildProductsPage() {
-	    Label title = new Label("Products");
-
-	    TableView<Product> table = new TableView<>();
-
-	    TableColumn<Product, Integer> colId = new TableColumn<>("ID");
-	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-
-	    TableColumn<Product, String> colName = new TableColumn<>("Name");
-	    colName.setCellValueFactory(new PropertyValueFactory<>("name"));
-
-	    TableColumn<Product, String> colSize = new TableColumn<>("Size");
-	    colSize.setCellValueFactory(new PropertyValueFactory<>("size"));
-
-	    TableColumn<Product, String> colColor = new TableColumn<>("Color");
-	    colColor.setCellValueFactory(new PropertyValueFactory<>("color"));
-
-	    TableColumn<Product, Double> colPrice = new TableColumn<>("Price");
-	    colPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
-
-	    TableColumn<Product, Integer> colStock = new TableColumn<>("Available");
-	    colStock.setCellValueFactory(cell -> {
-	        Product p = cell.getValue();
-	        int quantity = 0;
-	        for (Stock s : db.getAllStock()) {
-	            if (s.getProduct() != null && s.getProduct().getId() == p.getId()) {
-	                quantity = s.getQuantity();
-	                break;
-	            }
-	        }
-	        return new SimpleObjectProperty<>(quantity);
-	    });
-
-	    table.getColumns().addAll(colId, colName, colSize, colColor, colPrice, colStock);
-
-	    TextField qtyField = new TextField();
-	    qtyField.setPromptText("Quantity");
-	    Button addToCartBtn = new Button("Add to Cart");
-
-	    addToCartBtn.setOnAction(e -> {
-	        Product selected = table.getSelectionModel().getSelectedItem();
-	        if (selected == null) return;
-
-	        int qty;
-	        try {
-	            qty = Integer.parseInt(qtyField.getText().trim());
-	        } catch (Exception ex) {
-	            qty = 0;
-	        }
-
-	        if (qty <= 0) {
-	            new Alert(Alert.AlertType.WARNING, "Enter a valid quantity!").showAndWait();
-	            return;
-	        }
-
-	        // Check stock
-	        int available = 0;
-	        Stock stockItem = null;
-	        for (Stock s : db.getAllStock()) {
-	            if (s.getProduct() != null && s.getProduct().getId() == selected.getId()) {
-	                available = s.getQuantity();
-	                stockItem = s;
-	                break;
-	            }
-	        }
-
-	        if (qty > available) {
-	            new Alert(Alert.AlertType.WARNING, "Quantity exceeds available stock!").showAndWait();
-	            return;
-	        }
-
-	        // Add to in-memory cart
-	        cart.put(selected, cart.getOrDefault(selected, 0) + qty);
-
-	        // Reduce stock visually immediately
-	        if (stockItem != null) stockItem.setQuantity(available - qty);
-	        table.refresh();
-
-	        qtyField.clear();
-	        new Alert(Alert.AlertType.INFORMATION, "Added to cart!").showAndWait();
-	    });
-
-	    VBox box = new VBox(10, title, table, new VBox(5, qtyField, addToCartBtn));
-	    box.setPadding(new Insets(10));
-
-	    table.setItems(FXCollections.observableArrayList(db.getAllProducts()));
-
-	    return box;
-	}
-
-
-	// ------------------- CART PAGE (table + total + delete + print/place)
-	// -------------------
-	// ------------------- CART PAGE (table + total + delete + print)
-	private Parent buildCartPage() {
-	    Label title = new Label("Your Cart");
-
-	    TableView<Map.Entry<Product, Integer>> cartTable = new TableView<>();
-
-	    TableColumn<Map.Entry<Product, Integer>, String> nameCol = new TableColumn<>("Product");
-	    nameCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getKey().getName()));
-
-	    TableColumn<Map.Entry<Product, Integer>, Integer> qtyCol = new TableColumn<>("Quantity");
-	    qtyCol.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().getValue()));
-
-	    TableColumn<Map.Entry<Product, Integer>, Double> priceCol = new TableColumn<>("Price per Item");
-	    priceCol.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue().getKey().getPrice()));
-
-	    TableColumn<Map.Entry<Product, Integer>, Double> totalCol = new TableColumn<>("Total");
-	    totalCol.setCellValueFactory(cell ->
-	            new SimpleObjectProperty<>(cell.getValue().getKey().getPrice() * cell.getValue().getValue())
-	    );
-
-	    cartTable.getColumns().addAll(nameCol, qtyCol, priceCol, totalCol);
-
-	    // Load in-memory cart
-	    cartTable.setItems(FXCollections.observableArrayList(cart.entrySet()));
-
-	    Label totalLabel = new Label();
-	    updateCartTotal(totalLabel);
-
-	    Button deleteBtn = new Button("Remove Selected");
-	    deleteBtn.setOnAction(e -> {
-	        Map.Entry<Product, Integer> selected = cartTable.getSelectionModel().getSelectedItem();
-	        if (selected != null) {
-	            Product p = selected.getKey();
-	            int qty = selected.getValue();
-	            cart.remove(p);
-
-	            // Return stock visually
-	            for (Stock s : db.getAllStock()) {
-	                if (s.getProduct().getId() == p.getId()) {
-	                    s.setQuantity(s.getQuantity() + qty);
-	                    break;
-	                }
-	            }
-
-	            cartTable.setItems(FXCollections.observableArrayList(cart.entrySet()));
-	            updateCartTotal(totalLabel);
-	        }
-	    });
-
-	    Button printBtn = new Button("Print Cart");
-	    printBtn.setOnAction(e -> {
-	        if (cart.isEmpty()) return;
-	        StringBuilder sb = new StringBuilder("Cart Items:\n");
-	        double total = 0;
-	        for (Map.Entry<Product, Integer> entry : cart.entrySet()) {
-	            double itemTotal = entry.getKey().getPrice() * entry.getValue();
-	            sb.append(entry.getKey().getName())
-	              .append(" x").append(entry.getValue())
-	              .append(" = ").append(itemTotal)
-	              .append("\n");
-	            total += itemTotal;
-	        }
-	        sb.append("Total: ").append(total);
-	        new Alert(Alert.AlertType.INFORMATION, sb.toString()).showAndWait();
-	    });
-
-	    Button orderBtn = new Button("Place Order");
-	    orderBtn.setOnAction(e -> {
-	        if (cart.isEmpty()) return;
-
-	        if (db.placeOrder(loggedCustomer.getId(), cart)) {
-	            cart.clear();
-	            cartTable.setItems(FXCollections.observableArrayList(cart.entrySet()));
-	            updateCartTotal(totalLabel);
-	            new Alert(Alert.AlertType.INFORMATION, "Order placed successfully!").showAndWait();
-	        } else {
-	            new Alert(Alert.AlertType.ERROR, "Failed to place order!").showAndWait();
-	        }
-	    });
-
-
-	    HBox buttons = new HBox(10, deleteBtn, printBtn, orderBtn);
-	    VBox box = new VBox(10, title, cartTable, totalLabel, buttons);
-	    box.setPadding(new Insets(10));
-
-	    return box;
-	}
-
-	private void updateCartTotal(Label totalLabel) {
-	    double total = cart.entrySet().stream()
-	            .mapToDouble(en -> en.getKey().getPrice() * en.getValue())
-	            .sum();
-	    totalLabel.setText("Total: " + total);
-	}
+        Label msg = new Label();
+        msg.getStyleClass().add("sub");
 
+        Button enter = new Button("✅ Enter");
+        Button back = new Button("⬅ Back");
 
+        enter.getStyleClass().add("btn-primary");
+        back.getStyleClass().add("btn-secondary");
+
+        enter.setOnAction(e -> {
+            try {
+                int cid = Integer.parseInt(id.getText().trim());
+                String cname = name.getText().trim();
+
+                Customer c = db.loginCustomerByIdAndName(cid, cname);
+                if (c == null) {
+                    msg.setText("❌ Wrong name or ID!");
+                    return;
+                }
+
+                loggedCustomer = c;
+                showPage(buildCustomerHome(stage)); // go to home
+            } catch (Exception ex) {
+                msg.setText("⚠ Enter valid ID + Name");
+            }
+        });
+
+        back.setOnAction(e -> showPage(buildCustomerStartPage(stage)));
+
+
+
+        HBox buttons = new HBox(10, enter, back);
+        buttons.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, t, sub, name, id, buttons, msg);
+        box.setPadding(new Insets(20));
+        box.setMaxWidth(520);
+        box.getStyleClass().add("card");
+
+        StackPane wrap = new StackPane(box);
+        wrap.setPadding(new Insets(20));
+        return wrap;
+    }
+
+    // ------------------- PAGE 3: Register Customer -------------------
+    private Parent buildRegisterPage(Stage stage) {
+
+        Label t = new Label("📝 Register");
+        t.getStyleClass().add("h1");
+
+        Label sub = new Label("Create your account information");
+        sub.getStyleClass().add("sub");
+
+        TextField name = new TextField();    name.setPromptText("👤 Name");
+        TextField phone = new TextField();   phone.setPromptText("📞 Phone");
+        TextField email = new TextField();   email.setPromptText("📧 Email");
+        TextField address = new TextField(); address.setPromptText("📍 Address");
+
+        Label msg = new Label();
+        msg.getStyleClass().add("sub");
+
+        Button create = new Button("✅ Create");
+        Button back = new Button("⬅ Back");
+
+        create.getStyleClass().add("btn-primary");
+        back.getStyleClass().add("btn-secondary");
+
+        create.setOnAction(e -> {
+            try {
+                Customer c = new Customer(0, name.getText(), phone.getText(), email.getText(), address.getText());
+                boolean ok = db.addCustomer(c);
+                msg.setText(ok ? "🎉 Created! Now Login." : "❌ Failed!");
+            } catch (Exception ex) {
+                msg.setText("❌ Failed!");
+            }
+        });
+
+        back.setOnAction(e -> showPage(buildCustomerStartPage(stage)));
+
+        HBox buttons = new HBox(10, create, back);
+        buttons.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, t, sub, name, phone, email, address, buttons, msg);
+        box.setPadding(new Insets(20));
+        box.setMaxWidth(520);
+        box.getStyleClass().add("card");
+
+        StackPane wrap = new StackPane(box);
+        wrap.setPadding(new Insets(20));
+        return wrap;
+    }
+
+    // ------------------- CUSTOMER HOME (Products + Cart button) -------------------
+    private Parent buildCustomerHome(Stage stage) {
+
+        // Left menu
+        Button bProducts = new Button("👕 Products");
+        Button bCart = new Button("🛒 Cart");
+        Button bLogout = new Button("🚪 Logout");
+
+        for (Button b : new Button[]{bProducts, bCart, bLogout}) {
+            b.setMaxWidth(Double.MAX_VALUE);
+        }
+
+        VBox side = new VBox(10, bProducts, bCart, bLogout);
+        side.setPadding(new Insets(12));
+        side.setPrefWidth(190);
+        side.getStyleClass().add("sidebar");
+
+        StackPane center = new StackPane();
+        center.setPadding(new Insets(10));
+
+        BorderPane pane = new BorderPane();
+        pane.setLeft(side);
+        pane.setCenter(center);
+
+        center.getChildren().setAll(buildProductsPage(center));
+
+        bProducts.setOnAction(e -> center.getChildren().setAll(buildProductsPage(center)));
+        bCart.setOnAction(e -> center.getChildren().setAll(buildCartPage(center)));
+        bLogout.setOnAction(e -> {
+            loggedCustomer = null;
+            showPage(buildCustomerStartPage(stage));
+        });
+
+        // Wrap center content in a card feel
+        pane.setPadding(new Insets(10));
+        return pane;
+    }
+
+    // ------------------- PRODUCTS PAGE (Add to cart) -------------------
+    private Parent buildProductsPage(StackPane centerHolder) {
+
+        Label t = new Label("👕 Products");
+        t.getStyleClass().add("h1");
+
+        TableView<Product> table = new TableView<>();
+
+        TableColumn<Product, Integer> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Product, String> colName = new TableColumn<>("Name");
+        colName.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<Product, String> colSize = new TableColumn<>("Size");
+        colSize.setCellValueFactory(new PropertyValueFactory<>("size"));
+
+        TableColumn<Product, String> colColor = new TableColumn<>("Color");
+        colColor.setCellValueFactory(new PropertyValueFactory<>("color"));
+
+        TableColumn<Product, Double> colPrice = new TableColumn<>("Price");
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        table.getColumns().addAll(colId, colName, colSize, colColor, colPrice);
+        table.setItems(FXCollections.observableArrayList(db.getAllProducts()));
+
+        TextField qty = new TextField();
+        qty.setPromptText("🧮 Qty");
+
+        Button addToCart = new Button("➕ Add To Cart");
+        addToCart.getStyleClass().add("btn-primary");
+
+        Label msg = new Label();
+        msg.getStyleClass().add("sub");
+
+        addToCart.setOnAction(e -> {
+            try {
+                Product p = table.getSelectionModel().getSelectedItem();
+                if (p == null) { msg.setText("⚠ Select product first"); return; }
+
+                int q = Integer.parseInt(qty.getText().trim());
+                if (q <= 0) { msg.setText("⚠ Qty must be > 0"); return; }
+
+                boolean ok = db.addToCart(loggedCustomer.getId(), p.getId(), q);
+                msg.setText(ok ? "✅ Added!" : "❌ Failed!");
+            } catch (Exception ex) {
+                msg.setText("⚠ Enter valid qty");
+            }
+        });
+
+        HBox actions = new HBox(10, qty, addToCart);
+        actions.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, t, table, actions, msg);
+        box.setPadding(new Insets(16));
+        box.getStyleClass().add("card");
+        return box;
+    }
+
+    // ------------------- CART PAGE (table + total + delete + print/place) -------------------
+    private Parent buildCartPage(StackPane centerHolder) {
+
+        Label t = new Label("🛒 Cart");
+        t.getStyleClass().add("h1");
+
+        TableView<OrderItem> table = new TableView<>();
+
+        TableColumn<OrderItem, Integer> colPid = new TableColumn<>("Product ID");
+        colPid.setCellValueFactory(cell ->
+                new SimpleObjectProperty<>(cell.getValue().getProduct().getId()));
+
+        TableColumn<OrderItem, String> colPname = new TableColumn<>("Product");
+        colPname.setCellValueFactory(cell ->
+                new SimpleObjectProperty<>(cell.getValue().getProduct().getName()));
+
+        TableColumn<OrderItem, Integer> colQty = new TableColumn<>("Amount");
+        colQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+
+        TableColumn<OrderItem, Double> colPrice = new TableColumn<>("Price");
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        table.getColumns().addAll(colPid, colPname, colQty, colPrice);
+
+        Runnable load = () -> table.setItems(FXCollections.observableArrayList(db.getCartItems(loggedCustomer.getId())));
+        load.run();
+
+        Label total = new Label("Total: 0");
+        total.getStyleClass().add("sub");
+
+        Runnable calc = () -> {
+            double sum = 0;
+            for (OrderItem it : table.getItems()) sum += it.getQuantity() * it.getPrice();
+            total.setText("💰 Total: " + sum);
+        };
+        calc.run();
+
+        Button delete = new Button("🗑 Delete");
+        Button printOrder = new Button("🧾 Print / Place Order");
+
+        delete.getStyleClass().add("btn-secondary");
+        printOrder.getStyleClass().add("btn-primary");
+
+        Label msg = new Label();
+        msg.getStyleClass().add("sub");
+
+        delete.setOnAction(e -> {
+            OrderItem it = table.getSelectionModel().getSelectedItem();
+            if (it == null) { msg.setText("⚠ Select row first"); return; }
+            db.deleteCartItem(it.getId());
+            load.run();
+            calc.run();
+        });
+
+        printOrder.setOnAction(e -> {
+            boolean ok = db.placeOrder(loggedCustomer.getId());
+            msg.setText(ok ? "✅ Order Placed!" : "❌ Failed!");
+            load.run();
+            calc.run();
+        });
+
+        HBox actions = new HBox(10, delete, printOrder);
+        actions.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, t, table, actions, total, msg);
+        box.setPadding(new Insets(16));
+        box.getStyleClass().add("card");
+        return box;
+    }
+
+ 
+    private void showPageAfterLogin() {
+ 
+    }
 }
+
